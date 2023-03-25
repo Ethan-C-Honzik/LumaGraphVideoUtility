@@ -1,4 +1,7 @@
 images/
+NSVidUtilImages/
+frametimes.txt
+executable/
 *.mp4
 
 # Byte-compiled / optimized / DLL files

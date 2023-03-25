@@ -2,11 +2,11 @@
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-import ffmpeg
+import sys
 from PIL import Image
 import binascii
 import os
-
+import ffmpeg
 
 def generateByteArray(colorStr: str):
     return binascii.unhexlify(colorStr)
@@ -33,6 +33,8 @@ def genVid(lines: list):
     sequence_name = lines[0]
     images = []
     times = []
+    if not os.path.exists('NSVidUtilImages'):
+        os.mkdir('NSVidUtilImages')
     for index, line in enumerate(lines):
         if index == 0:
             continue
@@ -43,20 +45,20 @@ def genVid(lines: list):
         color_str = data[1]
         res = len(color_str) // 6
         image = Image.frombytes('RGB', (res, 1), generateByteArray(color_str))
-        image = image.resize((512, 256))
-        if not os.path.exists(f'images/{sequence_name}_images'):
-            os.mkdir(f'images/{sequence_name}_images')
-        path = f'images/{sequence_name}_images/frame_{index}.png'
+        image = image.resize((256, 256))
+        path = f'NSVidUtilImages/{sequence_name}_images'
+        if not os.path.exists(path):
+            os.mkdir(path)
+        path = path + f'/frame_{index}.png'
         images.append(path)
-        image.save(path)
+        image.save(path, compress_level=9)
     images = images[:len(images) - 1]
     durations = [times[i + 1] - times[i] for i in range(len(times) - 1)]
     ffmpegVideoGen(sequence_name, images, durations)
 
 
-def parseFile(file_dir: str):
-    file = open(file_dir)
-    lines = file.read().replace(' ', '_')
+def parse_text(rawData: str):
+    lines = rawData.replace(' ', '_')
     sequences = lines.split('-')
     for sequence in sequences:
         if sequence == '':
@@ -67,7 +69,9 @@ def parseFile(file_dir: str):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    parseFile('borealis.txt')
+    parse_text(open(sys.argv[1]).read())
+    print("Press any key to continue . . .")
+    input()
     # ffmpegTest()
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
