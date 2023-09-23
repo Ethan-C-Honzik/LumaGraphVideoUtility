@@ -3,10 +3,13 @@
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 import sys
+from Options import Options
+import json
 from PIL import Image
 import binascii
 import os
 import ffmpeg
+
 
 def generateByteArray(colorStr: str):
     return binascii.unhexlify(colorStr)
@@ -25,7 +28,7 @@ def ffmpegVideoGen(name: str, images: list, durations: list):
 
     # Use ffmpeg-python to convert the text file into a video
     stream = ffmpeg.input("frametimes.txt", format="concat")
-    stream = ffmpeg.output(stream, f"{name}.mp4", r='24', vcodec="libx264")
+    stream = ffmpeg.output(stream, f"{name}.mp4", r=f'{options.frameRate}', vcodec="libx264")
     ffmpeg.run(stream)
 
 
@@ -41,11 +44,11 @@ def genVid(lines: list):
         if line == '':
             break
         data = line.split(',')
-        times.append(float(data[0])/1000)
+        times.append(float(data[0]) / 1000)
         color_str = data[1]
         res = len(color_str) // 6
         image = Image.frombytes('RGB', (res, 1), generateByteArray(color_str))
-        image = image.resize((256, 256))
+        image = image.resize((options.width, options.height))
         path = f'NSVidUtilImages/{sequence_name}_images'
         if not os.path.exists(path):
             os.mkdir(path)
@@ -69,8 +72,22 @@ def parse_text(rawData: str):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    options = Options()
+    file_name = 'options.json'
+    settings_path = os.path.join(os.getcwd(), file_name)
+    if not os.path.exists(settings_path):
+        print("no settings file detected in directory, creating a new file. Hit enter when settings are finalized")
+        # Save the instance to a JSON file
+        with open(file_name, 'w') as json_file:
+            json_file.write(options.to_json())
+        input()
+        print("continuing...")
+    # Load the instance from the JSON file
+    with open(file_name, 'r') as json_file:
+        data = json.load(json_file)
+    options = options.from_dict(data)
     parse_text(open(sys.argv[1]).read())
-    print("Press any key to continue . . .")
+    print("Press enter to continue . . .")
     input()
     # ffmpegTest()
 
